@@ -4,7 +4,7 @@ import {
   Sparkles, Trash2, Tv, UserRound, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api, assetUrl, getErrorMessage } from './api.js';
+import { api, assetUrl, getErrorMessage, uploadAdminForm } from './api.js';
 import { useAuth } from './auth.jsx';
 
 function useAdminData(path, enabled) {
@@ -210,11 +210,7 @@ function AdminDashboard() {
     });
     try {
       const id = editingMovie?.id;
-      await api.request({
-        method: id ? 'put' : 'post',
-        url: id ? `/admin/movies/${id}` : '/admin/movies',
-        data: body
-      });
+      await uploadAdminForm(id ? 'put' : 'post', id ? `/admin/movies/${id}` : '/admin/movies', body);
       form.reset();
       setEditingMovie(null);
       setSelectedTranslatorId('');
@@ -230,11 +226,7 @@ function AdminDashboard() {
     setBusy(true); setError(''); setNotice('');
     try {
       const id = editingTranslator?.id;
-      await api.request({
-        method: id ? 'put' : 'post',
-        url: id ? `/admin/translators/${id}` : '/admin/translators',
-        data: new FormData(form)
-      });
+      await uploadAdminForm(id ? 'put' : 'post', id ? `/admin/translators/${id}` : '/admin/translators', new FormData(form));
       form.reset();
       setEditingTranslator(null);
       setNotice(id ? 'Translator profile updated.' : 'Translator profile created.');
@@ -270,11 +262,7 @@ function AdminDashboard() {
     });
     try {
       const id = editingSeries?.id;
-      const { data } = await api.request({
-        method: id ? 'put' : 'post',
-        url: id ? `/admin/series/${id}` : '/admin/series',
-        data: body
-      });
+      const { data } = await uploadAdminForm(id ? 'put' : 'post', id ? `/admin/series/${id}` : '/admin/series', body);
       if (!id) setSelectedSeasonId(String(data.season_id));
       form.reset();
       setEditingSeries(null);
@@ -302,11 +290,11 @@ function AdminDashboard() {
       if (form.elements.video.files[0]) {
         body.append('thumbnail', await createVideoThumbnail(form.elements.video.files[0]));
       }
-      await api.request({
-        method: editingEpisode ? 'put' : 'post',
-        url: editingEpisode ? `/admin/episodes/${editingEpisode.id}` : `/admin/seasons/${selectedSeasonId || seasonId}/episodes`,
-        data: body
-      });
+      await uploadAdminForm(
+        editingEpisode ? 'put' : 'post',
+        editingEpisode ? `/admin/episodes/${editingEpisode.id}` : `/admin/seasons/${selectedSeasonId || seasonId}/episodes`,
+        body
+      );
       form.reset();
       setEditingEpisode(null);
       setSelectedSeasonId('');
@@ -347,7 +335,7 @@ function AdminDashboard() {
     try {
       const form = event.currentTarget;
       const values = Object.fromEntries(new FormData(form).entries());
-      const { data } = await api.post(`/admin/series/${item.id}/seasons`, new FormData(form));
+      const { data } = await uploadAdminForm('post', `/admin/series/${item.id}/seasons`, new FormData(form));
       setSelectedSeasonId(String(data.id));
       setSeasonFormSeriesId(null);
       form.reset();
@@ -359,7 +347,7 @@ function AdminDashboard() {
     event.preventDefault();
     const form = event.currentTarget;
     try {
-      await api.put(`/admin/seasons/${season.id}`, new FormData(form));
+      await uploadAdminForm('put', `/admin/seasons/${season.id}`, new FormData(form));
       form.reset();
       setNotice(`Poster updated for ${season.series_title} Â· Season ${season.season_number}.`);
       await seasons.refresh();
@@ -399,7 +387,7 @@ function AdminDashboard() {
     event.preventDefault();
     const form = event.currentTarget;
     try {
-      await api.post(`/admin/${type}/${id}/subtitles`, new FormData(form));
+      await uploadAdminForm('post', `/admin/${type}/${id}/subtitles`, new FormData(form));
       form.reset();
       setNotice('Subtitle track added.');
       await refreshAll();

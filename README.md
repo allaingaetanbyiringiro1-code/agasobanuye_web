@@ -16,7 +16,7 @@ iSOKO Y' AGASOBANUYE is a full-stack streaming catalogue built with React, Vite,
 5. Optionally add local development sample data with `npm run seed`.
 6. Start the apps with `npm run dev`.
 
-Vite runs at `http://localhost:5173` and the API at `http://localhost:4000` by default. Configure `CLIENT_ORIGIN` and, for local development, `VITE_API_URL` for different addresses. The Vercel deployment proxies `/api` requests to Railway so authentication cookies remain same-origin. Health check: `GET /api/health`.
+Vite runs at `http://localhost:5173` and the API at `http://localhost:4000` by default. Configure `CLIENT_ORIGIN` and, for local development, `VITE_API_URL` for different addresses. The Vercel deployment proxies `/api` requests to Railway so authentication cookies remain same-origin. Large admin uploads go directly to Railway with a short-lived upload token to avoid Vercel's request-body limit; set `VITE_UPLOAD_API_URL` only if the Railway API URL changes. Health check: `GET /api/health`.
 
 ## Features & notes
 
