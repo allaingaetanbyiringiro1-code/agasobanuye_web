@@ -16,7 +16,26 @@ iSOKO Y' AGASOBANUYE is a full-stack streaming catalogue built with React, Vite,
 5. Optionally add local development sample data with `npm run seed`.
 6. Start the apps with `npm run dev`.
 
-Vite runs at `http://localhost:5173` and the API at `http://localhost:4000` by default. Configure `CLIENT_ORIGIN` and, for local development, `VITE_API_URL` for different addresses. The Vercel deployment proxies `/api` requests to Railway so authentication cookies remain same-origin. Large admin uploads go directly to Railway with a short-lived upload token to avoid Vercel's request-body limit; set `VITE_UPLOAD_API_URL` only if the Railway API URL changes. Health check: `GET /api/health`.
+Vite runs at `http://localhost:5173` and the API at `http://localhost:4000` by default. Configure `CLIENT_ORIGIN` and, for local development, `VITE_API_URL` for different addresses. The Vercel deployment proxies `/api` requests to Railway so authentication cookies remain same-origin. Health check: `GET /api/health`.
+
+## Deploy backend and database to Railway
+
+1. Create a Railway project and add a **MySQL** service.
+2. This checkout has no GitHub remote, so create an empty service named `backend` and deploy the local source from the `backend` directory with `npx @railway/cli up . --path-as-root --service backend`. The Railway ignore files exclude local environment files, dependencies, and uploaded files. If you connect a GitHub repository later, set the service's **Root Directory** to `/backend`.
+3. In the backend service settings, set the **Pre-deploy Command** to `npm run db:setup`, the **Start Command** to `npm start`, and the **Healthcheck Path** to `/api/health`.
+4. In the backend service variables, add references to the MySQL service's variables:
+   - `MYSQLHOST` = `${{MySQL.MYSQLHOST}}`
+   - `MYSQLPORT` = `${{MySQL.MYSQLPORT}}`
+   - `MYSQLUSER` = `${{MySQL.MYSQLUSER}}`
+   - `MYSQLPASSWORD` = `${{MySQL.MYSQLPASSWORD}}`
+   - `MYSQLDATABASE` = `${{MySQL.MYSQLDATABASE}}`
+
+   Replace `MySQL` with the exact name of your database service. The backend accepts these variables directly; local `DB_*` settings, if present, take precedence.
+5. Add `JWT_SECRET` as a private variable with a randomly generated value of at least 32 characters. Set `CLIENT_ORIGIN` to the exact public URL of your frontend. Add a persistent Railway volume mounted at `/app/storage` and set `MEDIA_ROOT=/app/storage` before uploading media; otherwise uploaded files can be lost when the service is redeployed.
+6. Deploy the backend and generate a public domain in its Railway **Networking** settings. The frontend's `vercel.json` proxies `/api` to that backend domain; keep the rewrite destination updated if the Railway domain changes. Set `CLIENT_ORIGIN` to the exact Vercel frontend URL so login requests are allowed. Large admin uploads go directly to Railway in 4 MiB chunks using a short-lived upload token to avoid Vercel's request-body limit; set `VITE_UPLOAD_API_URL` to the backend API URL only if its domain differs from the configured default. Keep `MAX_UPLOAD_MB` within the free space on the Railway media volume.
+7. Create the administrator once the database schema is ready. Temporarily set `ADMIN_EMAIL` and `ADMIN_PASSWORD` on the backend service (use a strong password of 12–72 bytes), then run `railway ssh --service "<backend-service-name>" -- npm run admin:create` from the linked project. Remove both temporary variables after the command succeeds; do not keep `ADMIN_PASSWORD` as a deployment variable.
+
+Keep the MySQL service private and connect to it using the internal variable references above. Configure database backups in Railway before relying on it for production data.
 
 ## Features & notes
 
